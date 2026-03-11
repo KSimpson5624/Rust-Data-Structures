@@ -1,0 +1,11 @@
+# Rust
+/target
+
+# macOS
+.DS_Store
+
+# Jetbrains
+.idea
+
+# Personal test arena
+sandbox
