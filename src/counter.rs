@@ -21,6 +21,10 @@ impl<T: Eq + Hash> Counter<T> {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.counts.len()
+    }
+
     pub fn add(&mut self, item: T) {
         *self.counts.entry(item).or_insert(0) += 1;
     }
@@ -148,6 +152,17 @@ mod tests {
 
         counter.subtract("K");
         assert_eq!(counter.get("K"), None);
+    }
+
+    #[test]
+    fn test_len() {
+        let mut counter: Counter<char> = Counter::new();
+
+        for character in "areallylongword".chars() {
+            counter.add(character);
+        }
+
+        assert_eq!(counter.len(), 10);
     }
 
     #[test]
