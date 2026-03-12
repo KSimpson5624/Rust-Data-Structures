@@ -3,6 +3,7 @@ use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::hash::Hash;
+use std::iter::FromIterator;
 use std::ops::{AddAssign, SubAssign};
 use std::fmt;
 
@@ -94,6 +95,21 @@ impl<T: Eq + Hash + Clone> SubAssign<&Counter<T>> for Counter<T> {
 impl<T: Eq + Hash + Clone> AddAssign<&Counter<T>> for Counter<T> {
     fn add_assign(&mut self, rhs: &Counter<T>) {
         self.add_counter(rhs);
+    }
+}
+
+impl<T> FromIterator<T> for Counter<T>
+where
+    T: Eq + Hash,
+{
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut counter = Counter::new();
+
+        for item in iter {
+            counter.add(item);
+        }
+
+        counter
     }
 }
 
@@ -324,5 +340,25 @@ mod tests {
         assert_eq!(counter.get("A"), Some(&1000));
         assert_eq!(counter.len(), 1);
         assert_eq!(counter.get("B"), None);
+    }
+
+    #[test]
+    fn test_from_iterator() {
+        let counter: Counter<char> = "banana".chars().collect();
+
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.get(&'b'), Some(&1));
+        assert_eq!(counter.get(&'a'), Some(&3));
+        assert_eq!(counter.get(&'n'), Some(&2));
+    }
+
+    #[test]
+    fn test_from_iterator_with_vec() {
+        let counter: Counter<i32> = Counter::from_iter(vec![1, 2, 3, 1, 1, 3]);
+
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.get(&1), Some(&3));
+        assert_eq!(counter.get(&2), Some(&1));
+        assert_eq!(counter.get(&3), Some(&2));
     }
 }
