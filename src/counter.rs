@@ -301,6 +301,17 @@ mod tests {
         assert_eq!(counter.get("Quarterback"), Some(&1));
         assert_eq!(counter.get("Touchdown"), Some(&1));
         assert_eq!(counter.get("Quarterbacks"), Some(&1));
+    }
 
+    #[test]
+    fn test_add_1000_times() {
+        let mut counter: Counter<&str> = Counter::new();
+
+        for _ in 0..1000 {
+            counter.add("A");
+        }
+        assert_eq!(counter.get("A"), Some(&1000));
+        assert_eq!(counter.len(), 1);
+        assert_eq!(counter.get("B"), None);
     }
 }
