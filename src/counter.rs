@@ -25,6 +25,10 @@ impl<T: Eq + Hash> Counter<T> {
         self.counts.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.counts.is_empty()
+    }
+
     pub fn add(&mut self, item: T) {
         *self.counts.entry(item).or_insert(0) += 1;
     }
@@ -163,6 +167,13 @@ mod tests {
         }
 
         assert_eq!(counter.len(), 10);
+    }
+
+    #[test]
+    fn test_is_empty() {
+        let counter: Counter<&str> = Counter::new();
+
+        assert!(counter.is_empty());
     }
 
     #[test]
