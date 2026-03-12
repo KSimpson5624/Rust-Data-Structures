@@ -1,6 +1,6 @@
 
 use std::borrow::Borrow;
-use std::collections::HashMap;
+use std::collections::{hash_map, HashMap};
 use std::collections::hash_map::Entry;
 use std::hash::Hash;
 use std::iter::FromIterator;
@@ -110,6 +110,42 @@ where
         }
 
         counter
+    }
+}
+
+impl<T> IntoIterator for Counter<T>
+where
+    T: Eq + Hash,
+{
+    type Item = (T, usize);
+    type IntoIter = hash_map::IntoIter<T, usize>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.counts.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Counter<T>
+where
+    T: Eq + Hash,
+{
+    type Item = (&'a T, &'a usize);
+    type IntoIter = hash_map::Iter<'a, T, usize>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.counts.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut Counter<T>
+where
+    T: Eq + Hash,
+{
+    type Item = (&'a T, &'a mut usize);
+    type IntoIter = hash_map::IterMut<'a, T, usize>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.counts.iter_mut()
     }
 }
 
@@ -360,5 +396,66 @@ mod tests {
         assert_eq!(counter.get(&1), Some(&3));
         assert_eq!(counter.get(&2), Some(&1));
         assert_eq!(counter.get(&3), Some(&2));
+    }
+
+    #[test]
+    fn test_into_iterator_consuming() {
+        let counter: Counter<char> = "banana".chars().collect();
+
+        let mut map: HashMap<char, usize> = HashMap::new();
+
+        for (key, value) in counter {
+            map.insert(key, value);
+        }
+
+        let mut expected: HashMap<char, usize> = HashMap::new();
+        expected.insert('b', 1);
+        expected.insert('a', 3);
+        expected.insert('n', 2);
+
+        assert_eq!(map, expected);
+    }
+
+    #[test]
+    fn test_into_iterator_borrowed() {
+        let counter: Counter<char> = "banana".chars().collect();
+
+        let mut map: HashMap<char, usize> = HashMap::new();
+
+        for (key, value) in &counter {
+            map.insert(*key, *value);
+        }
+
+        let mut expected: HashMap<char, usize> = HashMap::new();
+        expected.insert('b', 1);
+        expected.insert('a', 3);
+        expected.insert('n', 2);
+
+        assert_eq!(map, expected);
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.len(), map.len());
+    }
+
+    #[test]
+    fn test_into_iterator_borrowed_mut() {
+        let mut counter: Counter<&str> = Counter::new();
+
+        counter.add("banana");
+        counter.add("strawberry");
+        counter.add("apple");
+
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.get("banana"), Some(&1));
+        assert_eq!(counter.get("strawberry"), Some(&1));
+        assert_eq!(counter.get("apple"), Some(&1));
+
+        for (_, value) in &mut counter {
+            *value += 10;
+        }
+
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.get("banana"), Some(&11));
+        assert_eq!(counter.get("strawberry"), Some(&11));
+        assert_eq!(counter.get("apple"), Some(&11));
     }
 }
