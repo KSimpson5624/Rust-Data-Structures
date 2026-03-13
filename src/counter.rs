@@ -92,6 +92,24 @@ impl<T: Eq + Hash> Counter<T> {
     {
         self.counts.remove(key);
     }
+
+    pub fn most_common(&self) -> Option<&T> {
+        let mut max_counter: usize = 0;
+        let mut max_key: Option<&T> = None;
+
+        if self.counts.is_empty() {
+            return None;
+        }
+
+        for (key, count) in &self.counts {
+            if count > &max_counter {
+                max_counter = *count;
+                max_key = Some(&key);
+            }
+        }
+
+        max_key
+    }
 }
 
 impl<T: Eq + Hash + Clone> SubAssign<&Counter<T>> for Counter<T> {
@@ -498,5 +516,21 @@ mod tests {
         counter.remove("C");
 
         assert!(counter.is_empty());
+    }
+
+    #[test]
+    fn test_most_common() {
+        let counter: Counter<char> = "banana".chars().collect();
+
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.most_common(), Some(&'a'));
+    }
+
+    #[test]
+    fn test_most_common_on_empty() {
+        let counter: Counter<char> = Counter::new();
+
+        assert!(counter.is_empty());
+        assert_eq!(counter.most_common(), None);
     }
 }
