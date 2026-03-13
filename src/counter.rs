@@ -84,6 +84,14 @@ impl<T: Eq + Hash> Counter<T> {
             *entry = entry.saturating_add(value)
         }
     }
+
+    pub fn remove<Q>(&mut self, key: &Q)
+    where
+        T: Borrow<Q>,
+        Q: Hash + Eq + ?Sized,
+    {
+        self.counts.remove(key);
+    }
 }
 
 impl<T: Eq + Hash + Clone> SubAssign<&Counter<T>> for Counter<T> {
@@ -457,5 +465,38 @@ mod tests {
         assert_eq!(counter.get("banana"), Some(&11));
         assert_eq!(counter.get("strawberry"), Some(&11));
         assert_eq!(counter.get("apple"), Some(&11));
+    }
+
+    #[test]
+    fn test_remove() {
+        let mut counter: Counter<&str> = Counter::new();
+
+        counter.add("A");
+        counter.add("B");
+        counter.add("C");
+        counter.add("A");
+
+        counter.remove("A");
+
+        assert_eq!(counter.len(), 2);
+        assert_eq!(counter.get("A"), None);
+        assert_eq!(counter.get("B"), Some(&1));
+        assert_eq!(counter.get("C"), Some(&1));
+    }
+
+    #[test]
+    fn test_remove_all() {
+        let mut counter: Counter<&str> = Counter::new();
+
+        counter.add("A");
+        counter.add("B");
+        counter.add("C");
+        counter.add("A");
+
+        counter.remove("A");
+        counter.remove("B");
+        counter.remove("C");
+
+        assert!(counter.is_empty());
     }
 }
