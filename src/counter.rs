@@ -15,12 +15,18 @@ where
     counts: HashMap<T, usize>,
 }
 
-impl<T: Eq + Hash> Counter<T> {
-    pub fn new() -> Self {
+impl<T: Eq + Hash> Default for Counter<T> {
+    fn default() -> Self {
         Self {
             counts: HashMap::new(),
         }
     }
+}
+
+impl<T: Eq + Hash> Counter<T> {
+    pub fn new() -> Self {
+            Self::default()
+        }
 
     pub fn len(&self) -> usize {
         self.counts.len()
@@ -31,7 +37,7 @@ impl<T: Eq + Hash> Counter<T> {
     }
 
     pub fn add(&mut self, item: T) {
-        *self.counts.entry(item).or_insert(0) += 1;
+        self.counts.entry(item).and_modify(|count| *count += 1).or_insert(1);
     }
 
     pub fn subtract(&mut self, item: T) {
