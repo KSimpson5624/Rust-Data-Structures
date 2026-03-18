@@ -7,6 +7,9 @@ use std::iter::FromIterator;
 use std::ops::{AddAssign, SubAssign};
 use std::fmt;
 
+/// # Counter
+///
+/// Underlying structure is a hashmap, it increments the value by 1 for every occurrence of the key.
 #[derive(Debug, PartialEq)]
 pub struct Counter<T>
 where
@@ -28,6 +31,22 @@ impl<T: Eq + Hash> Counter<T> {
             Self::default()
         }
 
+    /// # len
+    ///
+    /// Returns the number of keys in the Counter<br>
+    /// Return type is usize
+    ///
+    /// # Example
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter: Counter<&str> = Counter::new();
+    /// counter.add("A");
+    /// counter.add("B");
+    /// counter.add("C");
+    /// counter.add("A");
+    ///
+    /// assert_eq!(counter.len(), 3);
+    /// ```
     pub fn len(&self) -> usize {
         self.counts.len()
     }
@@ -110,7 +129,7 @@ impl<T: Eq + Hash> Counter<T> {
         for (key, count) in &self.counts {
             if count > &max_counter {
                 max_counter = *count;
-                max_key = Some(&key);
+                max_key = Some(key);
             }
         }
 
