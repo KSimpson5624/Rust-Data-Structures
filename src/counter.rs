@@ -50,7 +50,6 @@ impl<T: Eq + Hash> Counter<T> {
     pub fn len(&self) -> usize {
         self.counts.len()
     }
-
     pub fn is_empty(&self) -> bool {
         self.counts.is_empty()
     }
