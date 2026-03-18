@@ -50,10 +50,39 @@ impl<T: Eq + Hash> Counter<T> {
     pub fn len(&self) -> usize {
         self.counts.len()
     }
+
+    /// # is_empty
+    ///
+    /// Checks if the Counter is empty
+    /// Returns a boolean<br>
+    ///
+    /// # Example
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter: Counter<&str> = Counter::new();
+    ///
+    /// assert!(counter.is_empty());
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.counts.is_empty()
     }
 
+    /// # add
+    ///
+    /// If a key is already present, then add increments the value by 1.<br>
+    /// If a key is not present, then add inserts the key and sets the value to 1.
+    ///
+    /// # Example
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter: Counter<&str> = Counter::new();
+    ///
+    /// counter.add("A");
+    /// assert_eq!(counter.get("A"), Some(&1));
+    ///
+    /// counter.add("A");
+    /// assert_eq!(counter.get("A"), Some(&2));
+    /// ```
     pub fn add(&mut self, item: T) {
         self.counts.entry(item).and_modify(|count| *count += 1).or_insert(1);
     }
