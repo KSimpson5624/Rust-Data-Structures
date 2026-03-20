@@ -87,6 +87,21 @@ impl<T: Eq + Hash> Counter<T> {
         self.counts.entry(item).and_modify(|count| *count += 1).or_insert(1);
     }
 
+    /// # subtract
+    ///
+    /// Decrease the value of a key by 1.<br>
+    /// Nothing occurs if the key is not present
+    ///
+    /// # Examples:
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter: Counter<char> = "rustisgreat".chars().collect();
+    ///
+    /// assert_eq!(counter.get(&'t'), Some(&2));
+    /// counter.subtract('t');
+    /// assert_eq!(counter.get(&'t'), Some(&1));
+    /// assert_eq!(counter.get(&'d'), None);
+    ///```
     pub fn subtract(&mut self, item: T) {
         match self.counts.entry(item) {
             Entry::Occupied(mut entry) => {
@@ -101,6 +116,21 @@ impl<T: Eq + Hash> Counter<T> {
         }
     }
 
+    /// # get
+    ///
+    /// Returns the value of the key as an Option<&usize>
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter: Counter<char> = "rust".chars().collect();
+    /// let r_count = match counter.get(&'r') {
+    ///     Some(&r_count) => r_count,
+    ///     None => 0,
+    /// };
+    ///
+    /// assert_eq!(r_count, 1)
+    /// ```
     pub fn get<Q>(&self, key: &Q) -> Option<&usize>
     where
         T: Borrow<Q>,
