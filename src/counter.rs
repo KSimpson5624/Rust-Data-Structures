@@ -31,7 +31,7 @@ impl<T: Eq + Hash> Counter<T> {
             Self::default()
         }
 
-    /// # len
+    /// Checks the length of a Counter
     ///
     /// Returns the number of keys in the Counter<br>
     /// Return type is usize
@@ -51,7 +51,7 @@ impl<T: Eq + Hash> Counter<T> {
         self.counts.len()
     }
 
-    /// # is_empty
+    /// Checks if a Counter has any keys
     ///
     /// Checks if the Counter is empty
     /// Returns a boolean<br>
@@ -67,10 +67,10 @@ impl<T: Eq + Hash> Counter<T> {
         self.counts.is_empty()
     }
 
-    /// # add
+    /// Adds a key or increments count of present key
     ///
-    /// If a key is already present, then add increments the value by 1.<br>
-    /// If a key is not present, then add inserts the key and sets the value to 1.
+    /// If a key is already present, then add increments the count by 1.<br>
+    /// If a key is not present, then add inserts the key and sets the count to 1.
     ///
     /// # Example
     /// ```
@@ -87,10 +87,12 @@ impl<T: Eq + Hash> Counter<T> {
         self.counts.entry(item).and_modify(|count| *count += 1).or_insert(1);
     }
 
-    /// # subtract
+    /// Subtracts the count of a key
     ///
-    /// Decrease the value of a key by 1.<br>
-    /// Nothing occurs if the key is not present
+    /// Decrease the count of a key by 1. If the count reaches zero, then
+    /// the key is removed entirely.
+    ///
+    /// Nothing occurs if the key is not present.
     ///
     /// # Examples:
     /// ```
@@ -116,9 +118,9 @@ impl<T: Eq + Hash> Counter<T> {
         }
     }
 
-    /// # get
+    /// Gets the count of a key
     ///
-    /// Returns the value of the key as an Option<&usize>
+    /// Returns the count of the key as an Option<&usize>
     ///
     /// # Example:
     /// ```
@@ -139,6 +141,29 @@ impl<T: Eq + Hash> Counter<T> {
         self.counts.get(key)
     }
 
+    /// Subtracts the counts of another `Counter` from this one.
+    ///
+    /// For each key in `other`, its count is subtracted from the corresponding count in `self`.
+    /// Keys whose count reaches zero are removed entirely. Keys present in `self` but not in
+    /// `other` are left unchanged.
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter1: Counter<char> = "rust".chars().collect();
+    /// let mut counter2: Counter<char> = "rustacean".chars().collect();
+    ///
+    /// counter2.subtract_counter(&counter1);
+    ///
+    /// assert_eq!(counter2.get(&'r'), None);
+    /// assert_eq!(counter2.get(&'u'), None);
+    /// assert_eq!(counter2.get(&'s'), None);
+    /// assert_eq!(counter2.get(&'t'), None);
+    /// assert_eq!(counter2.get(&'a'), Some(&2));
+    /// assert_eq!(counter2.get(&'c'), Some(&1));
+    /// assert_eq!(counter2.get(&'e'), Some(&1));
+    /// assert_eq!(counter2.get(&'n'), Some(&1));
+    /// ```
     pub fn subtract_counter(&mut self, other: &Counter<T>)
     where
         T: Clone,
@@ -158,6 +183,29 @@ impl<T: Eq + Hash> Counter<T> {
         }
     }
 
+    /// Adds the counts of another `Counter` to this one
+    ///
+    /// For each matching key in `other`, it increments the count in `self` by the count in `other`.
+    /// If key does not exist in this one, then it will be added, along with the corresponding count.
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter1: Counter<char> = "rust".chars().collect();
+    /// let mut counter2: Counter<char> = "rustacean".chars().collect();
+    ///
+    /// counter1.add_counter(&counter2);
+    ///
+    /// assert_eq!(counter1.get(&'r'), Some(&2));
+    /// assert_eq!(counter1.get(&'u'), Some(&2));
+    /// assert_eq!(counter1.get(&'s'), Some(&2));
+    /// assert_eq!(counter1.get(&'t'), Some(&2));
+    /// assert_eq!(counter1.get(&'a'), Some(&2));
+    /// assert_eq!(counter1.get(&'c'), Some(&1));
+    /// assert_eq!(counter1.get(&'e'), Some(&1));
+    /// assert_eq!(counter1.get(&'n'), Some(&1));
+    /// ```
+    ///
     pub fn add_counter(&mut self, other: &Counter<T>)
     where
         T: Clone,
