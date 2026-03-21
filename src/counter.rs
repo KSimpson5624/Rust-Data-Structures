@@ -216,6 +216,25 @@ impl<T: Eq + Hash> Counter<T> {
         }
     }
 
+    /// Removes key from Counter entirely
+    ///
+    /// Removes key and it's count (regardless of count value) from `Counter`.
+    /// If key does not exist, then nothing happens.
+    ///
+    /// # Example
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter: Counter<char> = Counter::new();
+    /// counter.add('a');
+    /// counter.add('a');
+    /// counter.add('b');
+    /// counter.add('c');
+    ///
+    /// counter.remove(&'a');
+    /// assert_eq!(counter.get(&'a'), None);
+    /// assert_eq!(counter.get(&'b'), Some(&1));
+    /// assert_eq!(counter.get(&'c'), Some(&1));
+    /// ```
     pub fn remove<Q>(&mut self, key: &Q)
     where
         T: Borrow<Q>,
@@ -663,5 +682,19 @@ mod tests {
 
         assert!(counter.is_empty());
         assert_eq!(counter.most_common(), None);
+    }
+
+    #[test]
+    fn test_remove_nonexistent_key() {
+        let mut counter: Counter<char> = "rust".chars().collect();
+
+        counter.remove(&'B');
+
+        assert_eq!(counter.len(), 4);
+        assert_eq!(counter.get(&'B'), None);
+        assert_eq!(counter.get(&'r'), Some(&1));
+        assert_eq!(counter.get(&'u'), Some(&1));
+        assert_eq!(counter.get(&'s'), Some(&1));
+        assert_eq!(counter.get(&'t'), Some(&1));
     }
 }
