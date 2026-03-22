@@ -185,8 +185,10 @@ impl<T: Eq + Hash> Counter<T> {
 
     /// Adds the counts of another `Counter` to this one
     ///
-    /// For each matching key in `other`, it increments the count in `self` by the count in `other`.
-    /// If key does not exist in this one, then it will be added, along with the corresponding count.
+    /// For each key in `other`, its count is added to teh corresponding count in `self`.
+    /// Keys present in `other` but not in `self` are inserted with `other`'s count.
+    ///
+    /// Counts saturate at [`usize::MAX`] rather than overflowing.
     ///
     /// # Example:
     /// ```
@@ -218,7 +220,7 @@ impl<T: Eq + Hash> Counter<T> {
 
     /// Removes key from Counter entirely
     ///
-    /// Removes key and it's count (regardless of count value) from `Counter`.
+    /// Removes key and its count (regardless of count value) from `Counter`.
     /// If key does not exist, then nothing happens.
     ///
     /// # Example
@@ -243,6 +245,22 @@ impl<T: Eq + Hash> Counter<T> {
         self.counts.remove(key);
     }
 
+    /// Finds the key with the highest count
+    ///
+    /// Returns the name of the key with the highest count.
+    /// If multiple keys have the same count, it takes the first one encountered.
+    ///
+    /// Returns `None` if `Counter` is empty
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::Counter;
+    /// let counter1: Counter<char> = "rustacean".chars().collect();
+    /// let counter2: Counter<char> = Counter::new();
+    ///
+    /// assert_eq!(counter1.most_common(), Some(&'a'));
+    /// assert_eq!(counter2.most_common(), None);
+    /// ```
     pub fn most_common(&self) -> Option<&T> {
         let mut max_counter: usize = 0;
         let mut max_key: Option<&T> = None;
@@ -262,18 +280,37 @@ impl<T: Eq + Hash> Counter<T> {
     }
 }
 
+/// Subtracts the counts of another `Counter` from this one in place.
+///
+/// Keys whose count reaches zero are removed. See [`Counter::subtract_counter`] for more details.
 impl<T: Eq + Hash + Clone> SubAssign<&Counter<T>> for Counter<T> {
     fn sub_assign(&mut self, rhs: &Counter<T>) {
         self.subtract_counter(rhs);
     }
 }
 
+/// Adds the counts of another `Counter` to this one in place.
+///
+/// Counts saturate at [`usize::MAX`]. See [`Counter::add_counter`] for more details.
 impl<T: Eq + Hash + Clone> AddAssign<&Counter<T>> for Counter<T> {
     fn add_assign(&mut self, rhs: &Counter<T>) {
         self.add_counter(rhs);
     }
 }
 
+/// Creates a `Counter` from an iterator by counting the occurrences of each element.
+///
+/// # Example
+/// ```
+/// use data_structures::Counter;
+///
+/// let counter: Counter<char> = "rust".chars().collect();
+///
+/// assert_eq!(counter.get(&'r'), Some(&1));
+/// assert_eq!(counter.get(&'u'), Some(&1));
+/// assert_eq!(counter.get(&'s'), Some(&1));
+/// assert_eq!(counter.get(&'t'), Some(&1));
+/// ```
 impl<T> FromIterator<T> for Counter<T>
 where
     T: Eq + Hash,
