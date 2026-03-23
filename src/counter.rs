@@ -250,6 +250,9 @@ impl<T: Eq + Hash> Counter<T> {
     /// Returns the name of the key with the highest count.
     /// If multiple keys have the same count, it takes the first one encountered.
     ///
+    /// Please note: "first encountered" can be different every time since a `Counter` is
+    /// unordered.
+    ///
     /// Returns `None` if `Counter` is empty
     ///
     /// # Example:
@@ -262,22 +265,41 @@ impl<T: Eq + Hash> Counter<T> {
     /// assert_eq!(counter2.most_common(), None);
     /// ```
     pub fn most_common(&self) -> Option<&T> {
-        let mut max_counter: usize = 0;
-        let mut max_key: Option<&T> = None;
-
-        if self.counts.is_empty() {
-            return None;
-        }
-
-        for (key, count) in &self.counts {
-            if count > &max_counter {
-                max_counter = *count;
-                max_key = Some(key);
-            }
-        }
-
-        max_key
+        self.counts
+            .iter()
+            .max_by_key(|(_, count)| *count)
+            .map(|(key, _)| key)
     }
+
+    /// Finds the key with the lowest count
+    ///
+    /// Returns the name of the key with the lowest count.
+    /// If multiple keys have the same count, it takes the first one encountered.
+    ///
+    /// Please note: "first encountered" can be different every time since a `Counter` is
+    /// unordered.
+    ///
+    /// Returns `None` if `Counter` is empty
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter: Counter<char> = "abbccc".chars().collect();
+    ///
+    /// assert_eq!(counter.least_common(), Some(&'a'));
+    /// ```
+    pub fn least_common(&self) -> Option<&T> {
+        self.counts
+            .iter()
+            .min_by_key(|(_, count)| *count)
+            .map(|(key, _)| key)
+    }
+    /*
+    pub fn highest_count(&self) -> Option<&T> {
+
+    }
+
+     */
 }
 
 /// Subtracts the counts of another `Counter` from this one in place.
@@ -733,5 +755,32 @@ mod tests {
         assert_eq!(counter.get(&'u'), Some(&1));
         assert_eq!(counter.get(&'s'), Some(&1));
         assert_eq!(counter.get(&'t'), Some(&1));
+    }
+    #[test]
+    fn test_least_common() {
+        let mut counter: Counter<&str> = Counter::new();
+        counter.add("banana");
+        counter.add("apple");
+        counter.add("strawberry");
+        counter.add("apple");
+        counter.add("banana");
+
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.least_common(), Some(&"strawberry"));
+    }
+
+    #[test]
+    fn test_least_common_on_tie() {
+        let counter: Counter<char> = "rust".chars().collect();
+        let valid = vec!['r', 'u', 's', 't'];
+        assert!(valid.contains(&counter.least_common().unwrap()));
+    }
+
+    #[test]
+    fn test_least_common_on_empty() {
+        let counter: Counter<&str> = Counter::new();
+
+        assert!(counter.is_empty());
+        assert_eq!(counter.least_common(), None);
     }
 }
