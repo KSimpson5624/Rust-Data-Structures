@@ -308,12 +308,39 @@ impl<T: Eq + Hash> Counter<T> {
     /// use data_structures::Counter;
     /// let mut counter: Counter<char> = "rustacean".chars().collect();
     ///
-    /// assert_eq!(counter.highest_count(), Some(&2));
+    /// assert_eq!(counter.highest_count(), Some(2));
     /// ```
     pub fn highest_count(&self) -> Option<usize> {
         self.counts
             .iter()
             .max_by_key(|(_, count)| *count)
+            .map(|(_, count)| *count)
+    }
+
+    /// Finds the lowest count in a `Counter`
+    ///
+    /// If there are multiple counts that are the lowest, it returns the
+    /// first encountered.
+    ///
+    /// Please note: "first encountered" can be different every time since a `Counter` is
+    /// unordered.
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter: Counter<&str> = Counter::new();
+    /// counter.add("A");
+    /// counter.add("A");
+    /// counter.add("B");
+    /// counter.add("B");
+    /// counter.add("C");
+    ///
+    /// assert_eq!(counter.lowest_count(), Some(1));
+    /// ```
+    pub fn lowest_count(&self) -> Option<usize> {
+        self.counts
+            .iter()
+            .min_by_key(|(_, count)| *count)
             .map(|(_, count)| *count)
     }
 
@@ -833,6 +860,37 @@ mod tests {
         let counter: Counter<char> = "rust".chars().collect();
 
         assert_eq!(counter.highest_count(), Some(1));
+    }
+
+    #[test]
+    fn test_lowest_count() {
+        let mut counter: Counter<&str> = Counter::new();
+        for num in 1..=10 {
+            if num % 4 == 0 {
+                counter.add("banana");
+            }
+            else if num % 2 == 0 {
+                counter.add("strawberry");
+            }
+            else {
+                counter.add("apple");
+            }
+        }
+
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.lowest_count(), Some(2));
+    }
+
+    #[test]
+    fn test_lowest_count_on_empty() {
+        let counter: Counter<&str> = Counter::new();
+        assert_eq!(counter.lowest_count(), None);
+    }
+
+    #[test]
+    fn test_lowest_count_on_tie() {
+        let counter: Counter<char> = "rust".chars().collect();
+        assert_eq!(counter.lowest_count(), Some(1));
     }
 
 }
