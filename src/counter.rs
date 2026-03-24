@@ -294,12 +294,29 @@ impl<T: Eq + Hash> Counter<T> {
             .min_by_key(|(_, count)| *count)
             .map(|(key, _)| key)
     }
-    /*
-    pub fn highest_count(&self) -> Option<&T> {
 
+    /// Finds the highest count in the `Counter`
+    ///
+    /// If there are multiple counts that are the highest, it returns the
+    /// first encountered.
+    ///
+    /// Please note: "first encountered" can be different every time since a `Counter` is
+    /// unordered.
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::Counter;
+    /// let mut counter: Counter<char> = "rustacean".chars().collect();
+    ///
+    /// assert_eq!(counter.highest_count(), Some(&2));
+    /// ```
+    pub fn highest_count(&self) -> Option<usize> {
+        self.counts
+            .iter()
+            .max_by_key(|(_, count)| *count)
+            .map(|(_, count)| *count)
     }
 
-     */
 }
 
 /// Subtracts the counts of another `Counter` from this one in place.
@@ -756,6 +773,7 @@ mod tests {
         assert_eq!(counter.get(&'s'), Some(&1));
         assert_eq!(counter.get(&'t'), Some(&1));
     }
+
     #[test]
     fn test_least_common() {
         let mut counter: Counter<&str> = Counter::new();
@@ -783,4 +801,38 @@ mod tests {
         assert!(counter.is_empty());
         assert_eq!(counter.least_common(), None);
     }
+
+    #[test]
+    fn test_highest_count() {
+        let mut counter: Counter<&str> = Counter::new();
+
+        for num in 1..5000 {
+            if num % 3 == 0 {
+                counter.add("banana");
+            }
+            else if num % 2 == 0 {
+                counter.add("strawberry");
+            }
+            else {
+                counter.add("apple");
+            }
+        }
+
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.highest_count(), Some(1667));
+    }
+
+    #[test]
+    fn test_highest_count_on_empty() {
+        let counter: Counter<&str> = Counter::new();
+        assert_eq!(counter.highest_count(), None);
+    }
+
+    #[test]
+    fn test_highest_count_on_tie() {
+        let counter: Counter<char> = "rust".chars().collect();
+
+        assert_eq!(counter.highest_count(), Some(1));
+    }
+
 }
