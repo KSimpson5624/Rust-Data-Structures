@@ -344,6 +344,21 @@ impl<T: Eq + Hash> Counter<T> {
             .map(|(_, count)| *count)
     }
 
+    /// Returns the sum of all counts in the `Counter`.
+    ///
+    /// Returns `0` if the `Counter` is empty.
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::Counter;
+    /// let counter: Counter<char> = "rustacean".chars().collect();
+    ///
+    /// assert_eq!(counter.total_count(), 9);
+    /// ```
+    pub fn total_count(&self) -> usize {
+        self.counts.values().sum()
+    }
+
 }
 
 /// Subtracts the counts of another `Counter` from this one in place.
@@ -891,6 +906,45 @@ mod tests {
     fn test_lowest_count_on_tie() {
         let counter: Counter<char> = "rust".chars().collect();
         assert_eq!(counter.lowest_count(), Some(1));
+    }
+
+    #[test]
+    fn test_total_count() {
+        let mut counter: Counter<&str> = Counter::new();
+
+        counter.add("banana");
+        counter.add("apple");
+        counter.add("strawberry");
+        counter.add("strawberry");
+        counter.add("strawberry");
+
+        assert_eq!(counter.len(), 3);
+        assert_eq!(counter.total_count(), 5);
+    }
+
+    #[test]
+    fn test_total_count_on_empty() {
+        let counter: Counter<&str> = Counter::new();
+        assert_eq!(counter.total_count(), 0);
+    }
+
+    #[test]
+    fn test_total_count_with_all_removed() {
+        let mut counter: Counter<char> = "rust".chars().collect();
+
+        assert_eq!(counter.total_count(), 4);
+
+        counter.remove(&'r');
+        assert_eq!(counter.total_count(), 3);
+
+        counter.remove(&'u');
+        assert_eq!(counter.total_count(), 2);
+
+        counter.remove(&'s');
+        assert_eq!(counter.total_count(), 1);
+
+        counter.remove(&'t');
+        assert_eq!(counter.total_count(), 0);
     }
 
 }
