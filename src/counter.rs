@@ -245,6 +245,41 @@ impl<T: Eq + Hash> Counter<T> {
         self.counts.remove(key);
     }
 
+    /// Returns an iterator over the keys of the `Counter`.
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::Counter;
+    /// let counter: Counter<char> = "rust".chars().collect();
+    ///
+    /// for count in counter.keys() {
+    ///     println!("{}", count);
+    /// }
+    /// ```
+    pub fn keys(&self) -> impl Iterator<Item = &T> {
+        self.counts.keys()
+    }
+
+    /// Returns an iterator over the counts of the `Counter`
+    ///
+    /// # Example
+    /// ```
+    /// use data_structures::Counter;
+    /// let counter: Counter<char> = "rust".chars().collect();
+    ///
+    /// for count in counter.values() {
+    ///     println!("{}", count);
+    /// }
+    /// ```
+    pub fn values(&self) -> impl Iterator<Item = &usize> {
+        self.counts.values()
+    }
+
+    /// Alias for [`Counter::values`]
+    pub fn counts(&self) -> impl Iterator<Item = &usize> {
+        self.values()
+    }
+
     /// Finds the key with the highest count
     ///
     /// Returns the name of the key with the highest count.
