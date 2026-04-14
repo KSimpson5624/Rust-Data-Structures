@@ -1,0 +1,1 @@
+rd_("odata_structures")
