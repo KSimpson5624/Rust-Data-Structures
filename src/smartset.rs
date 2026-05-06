@@ -32,6 +32,18 @@ impl<T> SmartSet<T> {
     pub fn len(&self) -> usize {
         self.items.len()
     }
+
+    pub fn capacity(&self) -> usize {
+        self.items.capacity()
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            items: HashSet::with_capacity(capacity),
+            cache: None,
+        }
+    }
+
 }
 
 impl<T: Eq + Hash> SmartSet<T> {
@@ -133,5 +145,19 @@ mod tests {
         assert_eq!(set.len(), 2);
         set.clear();
         assert_eq!(set.len(), 0);
+    }
+
+    #[test]
+    fn test_capacity() {
+        let mut set: SmartSet<i32> = SmartSet::new();
+        assert_eq!(set.capacity(), 0);
+        set.insert(1);
+        assert!(set.capacity() >= 1);
+    }
+
+    #[test]
+    fn test_with_capacity() {
+        let mut set: SmartSet<i32> = SmartSet::with_capacity(10);
+        assert!(set.capacity() >= 10);
     }
 }
