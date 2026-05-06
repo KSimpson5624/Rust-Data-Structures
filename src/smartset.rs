@@ -2,6 +2,7 @@
 #![allow(unused)]
 #![allow(dead_code)]
 
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -27,20 +28,30 @@ impl<T> SmartSet<T> {
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
+
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
 }
 
 impl<T: Eq + Hash> SmartSet<T> {
-    pub fn add(&mut self, item: T)
+    pub fn insert(&mut self, item: T) -> bool
     {
-        self.items.insert(item);
+        self.items.insert(item)
     }
 
-    pub fn get(&self, item: &T) -> Option<&T>
+    pub fn get<Q>(&self, item: &Q) -> Option<&T>
+    where
+        T: Borrow<Q>,
+        Q: Hash + Eq + ?Sized,
     {
         self.items.get(item)
     }
 
-    pub fn contains(&self, item: &T) -> bool
+    pub fn contains<Q>(&self, item: &Q) -> bool
+    where
+        T: Borrow<Q>,
+        Q: Hash + Eq + ?Sized,
     {
         self.items.contains(item)
     }
@@ -51,16 +62,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_add() {
+    fn test_insert() {
         let mut set: SmartSet<i32> = SmartSet::new();
 
-        set.add(1);
-        set.add(2);
-        set.add(3);
-
-        assert!(set.contains(&1));
-        assert!(set.contains(&2));
-        assert!(set.contains(&3));
+        assert_eq!(set.insert(1), true);
+        assert_eq!(set.insert(2), true);
+        assert_eq!(set.insert(3), true);
+        assert_eq!(set.insert(1), false);
     }
 
     #[test]
@@ -68,9 +76,9 @@ mod tests {
         let mut set: SmartSet<i32> = SmartSet::new();
         assert!(set.is_empty());
 
-        set.add(1);
-        set.add(2);
-        set.add(3);
+        set.insert(1);
+        set.insert(2);
+        set.insert(3);
 
         assert!(!set.is_empty());
         set.clear();
@@ -80,8 +88,8 @@ mod tests {
     #[test]
     fn test_contains() {
         let mut set: SmartSet<i32> = SmartSet::new();
-        set.add(1);
-        set.add(2);
+        set.insert(1);
+        set.insert(2);
 
         assert!(set.contains(&1));
         assert!(set.contains(&2));
@@ -91,8 +99,8 @@ mod tests {
     #[test]
     fn test_get() {
         let mut set: SmartSet<i32> = SmartSet::new();
-        set.add(1);
-        set.add(2);
+        set.insert(1);
+        set.insert(2);
 
         assert_eq!(set.get(&1), Some(&1));
         assert_eq!(set.get(&2), Some(&2));
@@ -103,5 +111,27 @@ mod tests {
     fn test_is_empty() {
         let set: SmartSet<i32> = SmartSet::new();
         assert!(set.is_empty());
+    }
+
+    #[test]
+    fn test_len() {
+        let mut set: SmartSet<i32> = SmartSet::new();
+        set.insert(1);
+        set.insert(2);
+        assert_eq!(set.len(), 2);
+        set.insert(3);
+        assert_eq!(set.len(), 3);
+        set.insert(1);
+        assert_eq!(set.len(), 3);
+    }
+
+    #[test]
+    fn test_len_with_clear() {
+        let mut set: SmartSet<i32> = SmartSet::new();
+        set.insert(1);
+        set.insert(2);
+        assert_eq!(set.len(), 2);
+        set.clear();
+        assert_eq!(set.len(), 0);
     }
 }
