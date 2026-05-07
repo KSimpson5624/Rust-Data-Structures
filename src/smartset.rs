@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 
 use std::borrow::Borrow;
+use std::collections::hash_set::{Drain, Iter};
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -42,6 +43,14 @@ impl<T> SmartSet<T> {
             items: HashSet::with_capacity(capacity),
             cache: None,
         }
+    }
+
+    pub fn iter(&self) -> Iter<'_, T> {
+        self.items.iter()
+    }
+
+    pub fn drain(&mut self) -> Drain<'_, T> {
+        self.items.drain()
     }
 
 }
@@ -159,5 +168,30 @@ mod tests {
     fn test_with_capacity() {
         let mut set: SmartSet<i32> = SmartSet::with_capacity(10);
         assert!(set.capacity() >= 10);
+    }
+
+    #[test]
+    fn test_iter() {
+        let mut set: SmartSet<i32> = SmartSet::new();
+        set.insert(1);
+        set.insert(2);
+        set.insert(3);
+
+        let mut iter = set.iter();
+        assert!(vec![&1, &2, &3].contains(&iter.next().unwrap()));
+    }
+
+    #[test]
+    fn test_drain() {
+        let mut set: SmartSet<i32> = SmartSet::new();
+        set.insert(1);
+        set.insert(2);
+        set.insert(3);
+        assert!(!set.is_empty());
+
+        for i in set.drain() {
+            vec![1, 2, 3].contains(&i);
+        }
+        assert!(set.is_empty());
     }
 }
