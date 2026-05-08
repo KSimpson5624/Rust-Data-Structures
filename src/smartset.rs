@@ -7,6 +7,10 @@ use std::collections::hash_set::{Drain, Iter};
 use std::collections::HashSet;
 use std::hash::Hash;
 
+/// SmartSet
+///
+/// Underlying structure is a HashSet. It keeps the O(1) performance of a HashSet, while allowing for
+/// ordering on demand.
 #[derive(Debug)]
 pub struct SmartSet<T> {
     items: HashSet<T>,
@@ -14,6 +18,9 @@ pub struct SmartSet<T> {
 }
 
 impl<T> SmartSet<T> {
+    /// Creates an empty SmartSet
+    ///
+    /// Initial capacity of an empty SmartSet is 0.
     pub fn new() -> Self {
         Self {
             items: HashSet::new(),
@@ -21,11 +28,35 @@ impl<T> SmartSet<T> {
         }
     }
 
+    /// Clears all data from a SmartSet
+    ///
+    ///
+    /// Example:
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let mut set: SmartSet<i32> = SmartSet::new();
+    /// set.insert(1);
+    /// set.insert(2);
+    /// set.insert(3);
+    /// assert!(!set.is_empty())
+    /// set.clear()
+    /// assert!(set.is_empty())
+    /// ```
     pub fn clear(&mut self) {
         self.items.clear();
         self.cache = None;
     }
 
+    /// Checks if a SmartSet is empty
+    ///
+    /// Returns a boolean value.
+    ///
+    /// Example;
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let set: SmartSet<i32> = SmartSet::new();
+    /// assert!(set.is_empty());
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
