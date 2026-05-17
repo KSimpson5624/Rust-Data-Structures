@@ -61,14 +61,47 @@ impl<T> SmartSet<T> {
         self.items.is_empty()
     }
 
+    /// Checks the length of a SmartSet
+    ///
+    /// Returns usize type.
+    ///
+    /// Example:
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let mut set: SmartSet<i32> = SmartSet::new();
+    /// set.insert(1);
+    /// set.insert(2);
+    /// set.insert(3);
+    /// assert_eq!(set.len(), 3);
+    /// ```
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
+    /// Checks the capacity of a SmartSet
+    ///
+    /// Returns usize.<br>
+    /// The capacity of a newly initialized empty SmartSet will be 0, unless initialized with
+    /// `with_capacity()`
+    ///
+    /// Example:
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let mut set: SmartSet<i32> = SmartSet::new();
+    /// assert_eq!(set.capacity(), 0);
+    /// ```
     pub fn capacity(&self) -> usize {
         self.items.capacity()
     }
 
+    /// Sets a minimum capacity for a new SmartSet
+    ///
+    /// Example:
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let mut set: SmartSet<i32> = SmartSet::with_capacity(50);
+    /// assert!(set.capacity() >= 50);
+    /// ```
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             items: HashSet::with_capacity(capacity),
