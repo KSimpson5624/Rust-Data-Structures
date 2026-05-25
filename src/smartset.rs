@@ -38,9 +38,9 @@ impl<T> SmartSet<T> {
     /// set.insert(1);
     /// set.insert(2);
     /// set.insert(3);
-    /// assert!(!set.is_empty())
-    /// set.clear()
-    /// assert!(set.is_empty())
+    /// assert!(!set.is_empty());
+    /// set.clear();
+    /// assert!(set.is_empty());
     /// ```
     pub fn clear(&mut self) {
         self.items.clear();
