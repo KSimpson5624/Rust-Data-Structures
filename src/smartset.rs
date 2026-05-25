@@ -120,6 +120,18 @@ impl<T> SmartSet<T> {
 }
 
 impl<T: Eq + Hash> SmartSet<T> {
+    /// Inserts an item into the `SmartSet`
+    ///
+    /// Returns a bool:
+    ///     - true: item did not previously exist and is added
+    ///     - false: item did previously exist and was not added
+    ///
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let mut set: SmartSet<i32> = SmartSet::new();
+    /// assert_eq!(set.insert(1), true);
+    /// assert_eq!(set.insert(1), false);
+    /// ```
     pub fn insert(&mut self, item: T) -> bool
     {
         self.items.insert(item)
