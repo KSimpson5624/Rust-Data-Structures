@@ -4,7 +4,7 @@
 
 use std::borrow::Borrow;
 use std::collections::hash_set::{Drain, Iter};
-use std::collections::HashSet;
+use std::collections::{hash_set, HashSet};
 use std::hash::Hash;
 
 /// SmartSet
@@ -15,6 +15,7 @@ use std::hash::Hash;
 pub struct SmartSet<T> {
     items: HashSet<T>,
     cache: Option<Vec<T>>,
+    is_sorted: bool,
 }
 
 impl<T> SmartSet<T> {
@@ -25,6 +26,7 @@ impl<T> SmartSet<T> {
         Self {
             items: HashSet::new(),
             cache: None,
+            is_sorted: false,
         }
     }
 
@@ -106,9 +108,24 @@ impl<T> SmartSet<T> {
         Self {
             items: HashSet::with_capacity(capacity),
             cache: None,
+            is_sorted: false,
         }
     }
 
+    /// Generates an iterator over the `SmartSet`
+    ///
+    /// # Example
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let set: SmartSet<char> = "rust".chars().collect();
+    ///
+    /// let mut iterator = set.iter();
+    /// iterator.next(); // Will be 'r', 'u', 's', or 't' in a random order
+    /// iterator.next(); // Will be 'r', 'u', 's', or 't' in a random order
+    /// iterator.next(); // Will be 'r', 'u', 's', or 't' in a random order
+    /// iterator.next(); // Will be 'r', 'u', 's', or 't' in a random order
+    /// iterator.next(); // Will be `None`
+    /// ```
     pub fn iter(&self) -> Iter<'_, T> {
         self.items.iter()
     }
@@ -126,6 +143,7 @@ impl<T: Eq + Hash> SmartSet<T> {
     ///     - true: item did not previously exist and is added
     ///     - false: item did previously exist and was not added
     ///
+    /// Example:
     /// ```
     /// use data_structures::SmartSet;
     /// let mut set: SmartSet<i32> = SmartSet::new();
@@ -153,6 +171,72 @@ impl<T: Eq + Hash> SmartSet<T> {
         self.items.contains(item)
     }
 }
+
+/// Creates a `SmartSet` from an iterator by counting the occurrences of each element.
+///
+/// Duplicates will be removed
+///
+/// # Example
+/// ```
+/// use data_structures::SmartSet;
+///
+/// let set: SmartSet<char> = "rust".chars().collect();
+///
+/// assert_eq!(set.get(&'r'), Some(&'r'));
+/// assert_eq!(set.get(&'u'), Some(&'u'));
+/// assert_eq!(set.get(&'s'), Some(&'s'));
+/// assert_eq!(set.get(&'t'), Some(&'t'));
+/// ```
+impl<T> FromIterator<T> for SmartSet<T>
+where
+    T: Eq + Hash,
+{
+    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
+        let mut set = Self::new();
+
+        for item in iter {
+            set.insert(item);
+        }
+        set
+    }
+}
+
+/// Creates a consuming iterator for `SmartSet`
+///
+/// # Example
+/// ```
+/// use data_structures::SmartSet;
+///
+/// let set: SmartSet<char> = "rust".chars().collect();
+///
+/// for character in set {
+///     println!("{}", character); // Will print out 'r', 'u', 's', 't' in a random order.
+/// }
+/// ```
+impl<T> IntoIterator for SmartSet<T>
+where
+    T: Eq + Hash,
+{
+    type Item = T;
+    type IntoIter = hash_set::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a SmartSet<T>
+where
+    T: Eq + Hash,
+{
+    type Item = &'a T;
+    type IntoIter = hash_set::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.items.iter()
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -269,5 +353,53 @@ mod tests {
             vec![1, 2, 3].contains(&i);
         }
         assert!(set.is_empty());
+    }
+
+    #[test]
+    fn test_from_iter() {
+        let set = SmartSet::from_iter(vec![1, 2, 3]);
+        assert_eq!(set.len(), 3);
+        assert!(set.contains(&1));
+        assert!(set.contains(&2));
+        assert!(set.contains(&3));
+    }
+
+    #[test]
+    fn test_collect() {
+        let set: SmartSet<char> = "Hello".chars().collect();
+        assert_eq!(set.len(), 4);
+        assert!(set.contains(&'H'));
+        assert!(set.contains(&'e'));
+        assert!(set.contains(&'l'));
+        assert!(set.contains(&'o'));
+    }
+
+    #[test]
+    fn test_into_iter() {
+        let set: SmartSet<char> = "rust".chars().collect();
+
+        let mut iter = set.into_iter();
+        assert!(vec!['r', 'u', 's', 't'].contains(&iter.next().unwrap()));
+        assert!(vec!['r', 'u', 's', 't'].contains(&iter.next().unwrap()));
+        assert!(vec!['r', 'u', 's', 't'].contains(&iter.next().unwrap()));
+        assert!(vec!['r', 'u', 's', 't'].contains(&iter.next().unwrap()));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_into_iter_for_loop() {
+        let set: SmartSet<char> = "rust".chars().collect();
+        for character in set {
+            assert!(vec!['r', 'u', 's', 't'].contains(&character));
+        }
+    }
+
+    #[test]
+    fn test_into_iter_with_reference() {
+        let set: SmartSet<char> = "rust".chars().collect();
+
+        for character in &set {
+            assert!(vec!['r', 'u', 's', 't'].contains(&character));
+        }
     }
 }
