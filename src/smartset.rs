@@ -5,17 +5,29 @@
 use std::borrow::Borrow;
 use std::collections::hash_set::{Drain, Iter};
 use std::collections::{hash_set, HashSet};
+use std::fmt;
 use std::hash::Hash;
+
+pub enum SmartSetIntoIter<T> {
+    Set(std::collections::hash_set::IntoIter<T>),
+    Sorted(std::vec::IntoIter<T>),
+}
+
+pub enum SmartSetIter<'a, T> {
+    Set(std::collections::hash_set::Iter<'a, T>),
+    Sorted(std::slice::Iter<'a, T>),
+}
 
 /// SmartSet
 ///
 /// Underlying structure is a HashSet. It keeps the O(1) performance of a HashSet, while allowing for
 /// ordering on demand.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SmartSet<T> {
     items: HashSet<T>,
     cache: Option<Vec<T>>,
     is_sorted: bool,
+    item_removed: bool,
 }
 
 impl<T> SmartSet<T> {
@@ -27,6 +39,7 @@ impl<T> SmartSet<T> {
             items: HashSet::new(),
             cache: None,
             is_sorted: false,
+            item_removed: false,
         }
     }
 
@@ -47,6 +60,8 @@ impl<T> SmartSet<T> {
     pub fn clear(&mut self) {
         self.items.clear();
         self.cache = None;
+        self.is_sorted = false;
+        self.item_removed = false;
     }
 
     /// Checks if a SmartSet is empty
@@ -109,6 +124,7 @@ impl<T> SmartSet<T> {
             items: HashSet::with_capacity(capacity),
             cache: None,
             is_sorted: false,
+            item_removed: false,
         }
     }
 
@@ -126,11 +142,16 @@ impl<T> SmartSet<T> {
     /// iterator.next(); // Will be 'r', 'u', 's', or 't' in a random order
     /// iterator.next(); // Will be `None`
     /// ```
-    pub fn iter(&self) -> Iter<'_, T> {
-        self.items.iter()
+    pub fn iter(&self) -> SmartSetIter<'_, T> {
+        if !self.is_sorted {
+            SmartSetIter::Set(self.items.iter())
+        } else {
+            SmartSetIter::Sorted(self.cache.as_ref().unwrap().iter())
+        }
     }
 
     pub fn drain(&mut self) -> Drain<'_, T> {
+        self.cache = None;
         self.items.drain()
     }
 
@@ -151,7 +172,12 @@ impl<T: Eq + Hash> SmartSet<T> {
     /// assert_eq!(set.insert(1), false);
     /// ```
     pub fn insert(&mut self, item: T) -> bool
+    where 
+        T: Clone,
     {
+        if !self.cache.is_none() {
+            self.cache.as_mut().unwrap().push(item.clone());
+        }
         self.items.insert(item)
     }
 
@@ -169,6 +195,15 @@ impl<T: Eq + Hash> SmartSet<T> {
         Q: Hash + Eq + ?Sized,
     {
         self.items.contains(item)
+    }
+
+    pub fn sort_unstable(&mut self)
+    where
+    T: Ord + Clone
+    {
+        self.cache = Some(self.items.iter().cloned().collect());
+        self.cache.as_mut().unwrap().sort_unstable();
+        self.is_sorted = true;
     }
 }
 
@@ -189,9 +224,10 @@ impl<T: Eq + Hash> SmartSet<T> {
 /// ```
 impl<T> FromIterator<T> for SmartSet<T>
 where
-    T: Eq + Hash,
+    T: Eq + Hash + Clone,
 {
-    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self 
+    {
         let mut set = Self::new();
 
         for item in iter {
@@ -218,10 +254,41 @@ where
     T: Eq + Hash,
 {
     type Item = T;
-    type IntoIter = hash_set::IntoIter<Self::Item>;
+    type IntoIter = SmartSetIntoIter<T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.items.into_iter()
+        if !self.is_sorted {
+            SmartSetIntoIter::Set(self.items.into_iter())
+        } else {
+            SmartSetIntoIter::Sorted(self.cache.unwrap().into_iter())
+        }
+    }
+}
+
+impl<'a, T> Iterator for SmartSetIter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            SmartSetIter::Set(iter) => iter.next(),
+            SmartSetIter::Sorted(iter) => iter.next(),
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self {
+            SmartSetIter::Set(iter) => iter.size_hint(),
+            SmartSetIter::Sorted(iter) => iter.size_hint(),
+        }
+    }
+}
+impl<T> Iterator for SmartSetIntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            SmartSetIntoIter::Set(iter) => iter.next(),
+            SmartSetIntoIter::Sorted(iter) => iter.next(),
+        }
     }
 }
 
@@ -230,10 +297,29 @@ where
     T: Eq + Hash,
 {
     type Item = &'a T;
-    type IntoIter = hash_set::Iter<'a, T>;
+    type IntoIter = SmartSetIter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.items.iter()
+        self.iter()
+    }
+}
+
+impl<T> fmt::Display for SmartSet<T>
+where
+    T: fmt::Display + Eq + Hash,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{{")?;
+
+        let mut first = true;
+        for item in self.iter() {
+            if !first {
+                write!(f, ", ")?;
+            }
+            first = false;
+            write!(f, "{}", item)?;
+        }
+        write!(f, "}}")
     }
 }
 
@@ -402,4 +488,42 @@ mod tests {
             assert!(vec!['r', 'u', 's', 't'].contains(&character));
         }
     }
+
+    #[test]
+    fn test_unstable_sort() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.sort_unstable();
+        let mut iterator = set.into_iter();
+        assert_eq!(iterator.next(), Some(1));
+        assert_eq!(iterator.next(), Some(2));
+        assert_eq!(iterator.next(), Some(3));
+        assert_eq!(iterator.next(), Some(4));
+        assert_eq!(iterator.next(), Some(5));
+        assert_eq!(iterator.next(), Some(8));
+        assert_eq!(iterator.next(), None);
+    }
+
+    #[test]
+    fn test_size_hint_empty_set() {
+        let set: SmartSet<i32> = SmartSet::new();
+        let iterator = set.iter();
+        assert_eq!((0, Some(0)), iterator.size_hint())
+    }
+
+    #[test]
+    fn test_size_hint() {
+        let set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let iterator = set.iter();
+        assert_eq!((6, Some(6)), iterator.size_hint());
+    }
+
+    #[test]
+    fn test_size_hint_after_consuming() {
+        let set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let mut iterator = set.iter();
+        iterator.next();
+        iterator.next();
+        assert_eq!((4, Some(4)), iterator.size_hint());
+    }
+
 }
