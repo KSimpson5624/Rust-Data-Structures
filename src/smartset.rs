@@ -95,6 +95,10 @@ impl<T> SmartSet<T> {
         self.items.len()
     }
 
+    pub fn is_sorted(&self) -> bool {
+        self.is_sorted
+    }
+
     /// Checks the capacity of a SmartSet
     ///
     /// Returns usize.<br>
@@ -152,6 +156,8 @@ impl<T> SmartSet<T> {
 
     pub fn drain(&mut self) -> Drain<'_, T> {
         self.cache = None;
+        self.is_sorted = false;
+        self.item_removed = false;
         self.items.drain()
     }
 
@@ -159,6 +165,8 @@ impl<T> SmartSet<T> {
 
 impl<T: Eq + Hash> SmartSet<T> {
     /// Inserts an item into the `SmartSet`
+    ///
+    /// This will cause the `SmartSet` to revert back to unsorted
     ///
     /// Returns a bool:
     ///     - true: item did not previously exist and is added
@@ -172,12 +180,13 @@ impl<T: Eq + Hash> SmartSet<T> {
     /// assert_eq!(set.insert(1), false);
     /// ```
     pub fn insert(&mut self, item: T) -> bool
-    where 
+    where
         T: Clone,
     {
-        if !self.cache.is_none() {
+        if !self.cache.is_none() && !self.item_removed {
             self.cache.as_mut().unwrap().push(item.clone());
         }
+        self.is_sorted = false;
         self.items.insert(item)
     }
 
@@ -197,11 +206,77 @@ impl<T: Eq + Hash> SmartSet<T> {
         self.items.contains(item)
     }
 
+    /// Removes an item from `SmartSet`
+    ///
+    /// This will cause `SmartSet` to revert back to unsorted
+    ///
+    /// # Example
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let mut set: SmartSet<i32> = SmartSet::new();
+    /// set.insert(1);
+    /// set.insert(2);
+    /// set.insert(3);
+    ///
+    /// assert!(set.contains(&2));
+    /// set.remove(&2);
+    /// assert!(!set.contains(&2));
+    /// ```
+    pub fn remove<Q>(&mut self, item: &Q) -> bool
+    where
+        T: Borrow<Q>,
+        Q: Hash + Eq + ?Sized,
+    {
+        if !self.cache.is_none() {
+            self.item_removed = true;
+        }
+        self.is_sorted = false;
+        self.items.remove(item)
+    }
+
+    /// Removes and returns and item from a `SmartSet`
+    ///
+    /// This will cause a `SmartSet` to revert back to unsorted
+    ///
+    /// This returns `Option<T>`
+    ///
+    /// # Example
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let mut set: SmartSet<char> = "rust".chars().collect();
+    /// let r = set.take(&'r').unwrap();
+    /// println!("{}", r);
+    /// ```
+    pub fn take<Q>(&mut self, item: &Q) -> Option<T>
+    where
+        T: Borrow<Q>,
+        Q: Hash + Eq + ?Sized,
+    {
+        if !self.cache.is_none() {
+            self.item_removed = true;
+        }
+        self.is_sorted = false;
+        self.items.take(item)
+    }
+
+    pub fn sort(&mut self)
+    where
+        T: Ord + Clone,
+    {
+        if self.cache.is_none() || self.item_removed {
+            self.cache = Some(self.items.iter().cloned().collect());
+        }
+        self.cache.as_mut().unwrap().sort();
+        self.is_sorted = true;
+    }
+
     pub fn sort_unstable(&mut self)
     where
     T: Ord + Clone
     {
-        self.cache = Some(self.items.iter().cloned().collect());
+        if self.cache.is_none() || self.item_removed {
+            self.cache = Some(self.items.iter().cloned().collect());
+        }
         self.cache.as_mut().unwrap().sort_unstable();
         self.is_sorted = true;
     }
@@ -226,7 +301,7 @@ impl<T> FromIterator<T> for SmartSet<T>
 where
     T: Eq + Hash + Clone,
 {
-    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self 
+    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self
     {
         let mut set = Self::new();
 
@@ -326,6 +401,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
     use super::*;
 
     #[test]
@@ -526,4 +602,172 @@ mod tests {
         assert_eq!((4, Some(4)), iterator.size_hint());
     }
 
+    #[test]
+    fn test_sort() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let expected = vec![1, 2, 3, 4, 5, 8];
+        set.sort();
+        for (index, value) in set.iter().enumerate() {
+            assert_eq!(*value, expected[index]);
+        }
+    }
+
+    #[test]
+    fn test_sort_after_insert() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let not_expected = vec![1, 2, 3, 4, 5, 8, 9];
+        set.sort();
+        set.insert(9);
+        assert_ne!(set.iter().cloned().collect::<Vec<i32>>(), not_expected);
+    }
+
+    #[test]
+    fn test_sort_after_remove() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let not_expected = vec![1, 2, 3, 4, 8];
+        set.sort();
+        set.remove(&5);
+        assert_ne!(set.iter().cloned().collect::<Vec<i32>>(), not_expected);
+    }
+
+    #[test]
+    fn test_sort_unstable_after_insert() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let not_expected = vec![1, 2, 3, 4, 5, 8, 9];
+        set.sort_unstable();
+        set.insert(9);
+        assert_ne!(set.iter().cloned().collect::<Vec<i32>>(), not_expected);
+    }
+
+    #[test]
+    fn test_sort_unstable_after_remove() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let not_expected = vec![1, 2, 3, 4, 8];
+        set.sort_unstable();
+        set.remove(&5);
+        assert_ne!(set.iter().cloned().collect::<Vec<i32>>(), not_expected);
+    }
+
+    #[test]
+    fn test_remove() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.remove(&5);
+        set.remove(&2);
+        set.remove(&4);
+        assert_eq!(set.len(), 3);
+        assert!(!set.contains(&5));
+        assert!(set.contains(&8));
+        assert!(!set.contains(&2));
+        assert!(set.contains(&3));
+        assert!(set.contains(&1));
+        assert!(!set.contains(&4));
+    }
+
+    #[test]
+    fn test_take() {
+        let mut set: SmartSet<char> = "rust".chars().collect();
+        let r = set.take(&'r');
+        assert_eq!(r, Some('r'));
+    }
+
+    #[test]
+    fn test_sort_after_take() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.sort();
+        let one = set.take(&1);
+        assert_eq!(one, Some(1));
+        let not_expected = vec![2, 3, 4, 5, 8];
+        assert_ne!(set.iter().cloned().collect::<Vec<i32>>(), not_expected);
+    }
+
+    #[test]
+    fn test_sort_unstable_after_take() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.sort_unstable();
+        let one = set.take(&1);
+        assert_eq!(one, Some(1));
+        let not_expected = vec![2, 3, 4, 5, 8];
+        assert_ne!(set.iter().cloned().collect::<Vec<i32>>(), not_expected);
+    }
+
+    fn test_sort_twice() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let expected = vec![1, 2, 3, 4, 5, 8];
+        set.sort();
+        for (index, value) in set.iter().enumerate() {
+            assert_eq!(*value, expected[index]);
+        }
+        set.sort();
+        for (index, value) in set.iter().enumerate() {
+            assert_eq!(*value, expected[index]);
+        }
+    }
+
+    #[test]
+    fn test_sort_on_pathbuf() {
+        let paths: [PathBuf;4] = [
+            PathBuf::from("C:/Users/root"),
+            PathBuf::from("C:/Users/root/Desktop"),
+            PathBuf::from("C:/Users/root/Documents"),
+            PathBuf::from("C:/Users/root/Downloads"),
+        ];
+
+        let mut set: SmartSet<PathBuf> = SmartSet::from_iter(paths.clone());
+        set.sort();
+        assert_eq!(set.iter().cloned().collect::<Vec<PathBuf>>(), paths);
+    }
+
+    #[test]
+    fn test_is_sorted() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.sort();
+        assert!(set.is_sorted());
+    }
+
+    #[test]
+    fn test_is_sorted_after_insert() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.sort();
+        assert!(set.is_sorted());
+        set.insert(9);
+        assert!(!set.is_sorted());
+    }
+
+    #[test]
+    fn test_is_sorted_after_remove() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.sort();
+        assert!(set.is_sorted());
+        set.remove(&4);
+        assert!(!set.is_sorted());
+    }
+
+    #[test]
+    fn test_is_sorted_after_take() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.sort();
+        assert!(set.is_sorted());
+        let _four = set.take(&4);
+        assert!(!set.is_sorted());
+    }
+
+    #[test]
+    fn test_is_sorted_after_get() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.sort();
+        assert!(set.is_sorted());
+        let _four = set.get(&4);
+        assert!(set.is_sorted());
+    }
+
+    #[test]
+    fn test_is_sorted_after_iteration() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        set.sort();
+        assert!(set.is_sorted());
+        for item in &set {
+            println!("{:?}", item);
+        }
+        assert!(set.is_sorted());
+    }
 }
