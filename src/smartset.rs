@@ -163,6 +163,12 @@ impl<T> SmartSet<T> {
 
 }
 
+impl<T> Default for SmartSet<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Eq + Hash> SmartSet<T> {
     /// Inserts an item into the `SmartSet`
     ///
@@ -183,7 +189,7 @@ impl<T: Eq + Hash> SmartSet<T> {
     where
         T: Clone,
     {
-        if !self.cache.is_none() && !self.item_removed {
+        if self.cache.is_some() && !self.item_removed {
             self.cache.as_mut().unwrap().push(item.clone());
         }
         self.is_sorted = false;
@@ -227,7 +233,7 @@ impl<T: Eq + Hash> SmartSet<T> {
         T: Borrow<Q>,
         Q: Hash + Eq + ?Sized,
     {
-        if !self.cache.is_none() {
+        if self.cache.is_some() {
             self.item_removed = true;
         }
         self.is_sorted = false;
@@ -252,7 +258,7 @@ impl<T: Eq + Hash> SmartSet<T> {
         T: Borrow<Q>,
         Q: Hash + Eq + ?Sized,
     {
-        if !self.cache.is_none() {
+        if self.cache.is_some() {
             self.item_removed = true;
         }
         self.is_sorted = false;
