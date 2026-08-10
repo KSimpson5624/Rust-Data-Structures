@@ -1,10 +1,7 @@
-#![allow(unused_imports)]
-#![allow(unused)]
-#![allow(dead_code)]
 
 use std::borrow::Borrow;
-use std::collections::hash_set::{Drain, Iter};
-use std::collections::{hash_set, HashSet};
+use std::collections::hash_set::Drain;
+use std::collections::HashSet;
 use std::fmt;
 use std::hash::Hash;
 
@@ -154,6 +151,22 @@ impl<T> SmartSet<T> {
         }
     }
 
+    /// `drain` returns all the elements from a `SmartSet` and removes them from the `SmartSet`
+    ///
+    /// # Note: Even if the `SmartSet` is sorted, `drain` will return the elements in an arbitrary order.
+    ///
+    /// # Example:
+    /// ```
+    /// use data_structures::SmartSet;
+    /// let mut set: SmartSet<i32> = SmartSet::from_iter(vec![1, 2, 3, 4, 5]);
+    /// let other_set = set.drain();
+    ///
+    /// // assert!(set.is_empty()); This would return true if it didn't violate borrowing rules
+    ///
+    /// for item in other_set {
+    ///     println!("{}", item); // 1, 2, 3, 4, 5 in an arbitrary order
+    /// }
+    /// ```
     pub fn drain(&mut self) -> Drain<'_, T> {
         self.cache = None;
         self.is_sorted = false;
@@ -190,6 +203,7 @@ impl<T: Eq + Hash> SmartSet<T> {
         T: Clone,
     {
         if self.cache.is_some() && !self.item_removed {
+            // This unwrap is safe because the condition above confirms self.cache is not None
             self.cache.as_mut().unwrap().push(item.clone());
         }
         self.is_sorted = false;
@@ -269,9 +283,13 @@ impl<T: Eq + Hash> SmartSet<T> {
     where
         T: Ord + Clone,
     {
+        // If the cache doesn't exist yet or if an item has been removed we want to clone every item form the underlying hashset prior
+        // to sorting. Removal of an item in a Vector is O(n), which is the same as re-cloning the entire set. This will reduce the cost
+        // of maintaining the cache
         if self.cache.is_none() || self.item_removed {
             self.cache = Some(self.items.iter().cloned().collect());
         }
+        // This unwrap is safe because if the cache is None, it gets assigned in the conditional above
         self.cache.as_mut().unwrap().sort();
         self.is_sorted = true;
     }
@@ -280,9 +298,13 @@ impl<T: Eq + Hash> SmartSet<T> {
     where
     T: Ord + Clone
     {
+        // If the cache doesn't exist yet or if an item has been removed we want to clone every item form the underlying hashset prior
+        // to sorting. Removal of an item in a Vector is O(n), which is the same as re-cloning the entire set. This will reduce the cost
+        // of maintaining the cache
         if self.cache.is_none() || self.item_removed {
             self.cache = Some(self.items.iter().cloned().collect());
         }
+        // This unwrap is safe because if the cache is None, it gets assigned in the conditional above
         self.cache.as_mut().unwrap().sort_unstable();
         self.is_sorted = true;
     }
@@ -494,7 +516,7 @@ mod tests {
 
     #[test]
     fn test_with_capacity() {
-        let mut set: SmartSet<i32> = SmartSet::with_capacity(10);
+        let set: SmartSet<i32> = SmartSet::with_capacity(10);
         assert!(set.capacity() >= 10);
     }
 
@@ -518,7 +540,7 @@ mod tests {
         assert!(!set.is_empty());
 
         for i in set.drain() {
-            vec![1, 2, 3].contains(&i);
+            assert!(vec![1, 2, 3].contains(&i));
         }
         assert!(set.is_empty());
     }
@@ -696,6 +718,7 @@ mod tests {
         assert_ne!(set.iter().cloned().collect::<Vec<i32>>(), not_expected);
     }
 
+    #[test]
     fn test_sort_twice() {
         let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
         let expected = vec![1, 2, 3, 4, 5, 8];
