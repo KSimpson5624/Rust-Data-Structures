@@ -776,4 +776,44 @@ mod tests {
         }
         assert!(set.is_sorted());
     }
+
+    #[test]
+    fn test_sorted_length_after_insertion() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let pre_sort_length = set.len();
+        set.sort();
+        set.insert(9);
+        set.sort();
+        assert_eq!(set.len(), (pre_sort_length + 1));
+    }
+
+    #[test]
+    fn test_sorted_length_after_removal() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let pre_sort_length = set.len();
+        set.sort();
+        set.remove(&4);
+        set.sort();
+        assert_eq!(set.len(), (pre_sort_length - 1));
+    }
+
+    #[test]
+    fn test_unstable_sorted_length_after_insertion() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let pre_sort_length = set.len();
+        set.sort_unstable();
+        set.insert(9);
+        set.sort_unstable();
+        assert_eq!(set.len(), (pre_sort_length + 1));
+    }
+
+    #[test]
+    fn test_unstable_sorted_length_after_removal() {
+        let mut set: SmartSet<i32> = SmartSet::from_iter(vec![5, 8, 4, 2, 1, 3]);
+        let pre_sort_length = set.len();
+        set.sort_unstable();
+        set.remove(&4);
+        set.sort_unstable();
+        assert_eq!(set.len(), (pre_sort_length - 1));
+    }
 }
