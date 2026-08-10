@@ -9,13 +9,5 @@ edition = "2024"
 criterion = "0.8.2"
 
 [[bench]]
-name = "sort"
-harness = false
-
-[[bench]]
-name = "membership"
-harness = false
-
-[[bench]]
-name = "construction"
+name = "smartset"
 harness = false
