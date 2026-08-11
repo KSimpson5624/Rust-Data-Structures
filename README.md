@@ -27,5 +27,5 @@ set.sort();
 for item in &set {
     println!("{}", item); // prints out 1, 3, 5 in order
 }
-assert!(set.contains(3)); // Still maintains O(1) for lookups
+assert!(set.contains(&3)); // Still maintains O(1) for lookups
 ```
