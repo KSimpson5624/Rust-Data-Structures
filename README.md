@@ -13,6 +13,19 @@ counter.add("B");
 
 assert_eq!(counter.get("A"), Some(&2));
 ```
+## SmartSet
+This data structure is a hybrid model that maintains the performance and behavior of a HashSet, while being able to be ordered on demand. 
 
-# Future plans
-I plan to design a SmartSet next, it will have almost the same performance as a HashSet but can be ordered on demand. 
+Example:
+```rust
+let mut set: SmartSet<i32> = SmartSet::new();
+set.insert(5);
+set.insert(1);
+set.insert(3);
+set.sort();
+
+for item in &set {
+    println!("{}", item); // prints out 1, 3, 5 in order
+}
+assert!(set.contains(3)); // Still maintains O(1) for lookups
+```
