@@ -32,4 +32,60 @@ fn bench_contains(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_contains);
+fn bench_insert(c: &mut Criterion) {
+    let mut group = c.benchmark_group("insert");
+
+    for size in [100, 1_000, 10_000, 100_000] {
+        let data: Vec<i32> = (0..size).collect();
+
+        let mut smartset: SmartSet<i32> = data.iter().copied().collect();
+        let mut hashset: HashSet<i32> = data.iter().copied().collect();
+        let mut btreeset: BTreeSet<i32> = data.iter().copied().collect();
+
+        let target = size / 2;
+
+        group.bench_with_input(BenchmarkId::new("smartset", size), &size, |b, _| {
+            b.iter(|| { black_box(smartset.insert(target)) });
+        });
+
+        group.bench_with_input(BenchmarkId::new("hashset", size), &size, |b, _| {
+            b.iter(|| { black_box(hashset.insert(target)) });
+        });
+
+        group.bench_with_input(BenchmarkId::new("btreeset", size), &size, |b, _| {
+            b.iter(|| { black_box(btreeset.insert(target)) });
+        });
+    }
+
+    group.finish();
+}
+
+fn bench_remove(c: &mut Criterion) {
+    let mut group = c.benchmark_group("remove");
+
+    for size in [100, 1_000, 10_000, 100_000] {
+        let data: Vec<i32> = (0..size).collect();
+
+        let mut smartset: SmartSet<i32> = data.iter().copied().collect();
+        let mut hashset: HashSet<i32> = data.iter().copied().collect();
+        let mut btreeset: BTreeSet<i32> = data.iter().copied().collect();
+
+        let target = size / 2;
+
+        group.bench_with_input(BenchmarkId::new("smartset", size), &size, |b, _| {
+            b.iter(|| { black_box(smartset.remove(&target)) });
+        });
+
+        group.bench_with_input(BenchmarkId::new("hashset", size), &size, |b, _| {
+            b.iter(|| { black_box(hashset.remove(&target)) });
+        });
+
+        group.bench_with_input(BenchmarkId::new("btreeset", size), &size, |b, _| {
+            b.iter(|| { black_box(btreeset.remove(&target)) });
+        });
+    }
+
+    group.finish();
+}
+
+criterion_group!(benches, bench_contains, bench_insert, bench_remove);
