@@ -43,13 +43,15 @@ fn bench_sort_before_and_after_insert(c: &mut Criterion) {
         // This creates a vector of random i32 values (positive and negative) of the length `size`
         let data: Vec<i32> = (0..size).map(|_| rng.random()).collect();
 
+        let random_insert: i32 = rng.random();
+
 
         group.bench_with_input(BenchmarkId::new("smartset", size), &size, |b, _| {
             b.iter_batched(||
                                data.iter().copied().collect::<SmartSet<i32>>(),
                            |mut set| {
                                black_box(set.sort());
-                               set.insert(rng.random());
+                               set.insert(random_insert);
                                black_box(set.sort());
                            },
                            BatchSize::SmallInput
@@ -63,7 +65,7 @@ fn bench_sort_before_and_after_insert(c: &mut Criterion) {
                                // To sort a HashSet after insertion, it must be copied a second time to a vector.
                                let mut vec: Vec<i32> = set.iter().copied().collect();
                                vec.sort();
-                               set.insert(rng.random());
+                               set.insert(random_insert);
                                vec = set.iter().copied().collect();
                                vec.sort();
                                black_box(vec);
