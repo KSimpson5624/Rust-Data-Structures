@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["counter"]};
+window.SIDEBAR_ITEMS = {"mod":["counter","smartset"]};
