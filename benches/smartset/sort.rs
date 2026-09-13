@@ -102,7 +102,7 @@ fn bench_sort_before_and_after_remove(c: &mut Criterion) {
             b.iter_batched(||
                                data.iter().copied().collect::<HashSet<i32>>(),
                            |mut set| {
-                               // To sort a HashSet after insertion, it must be copied a second time to a vector.
+                               // To sort a HashSet after removal, it must be copied a second time to a vector.
                                let mut vec: Vec<i32> = set.iter().copied().collect();
                                vec.sort();
                                set.remove(&item_removed);
